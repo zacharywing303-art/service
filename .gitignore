@@ -1,0 +1,34 @@
+_internal
+node_modules/
+dist/
+.turbo/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+apps/web/dist/
+apps/field/dist/
+apps/site/dist/
+apps/portal/dist/
+
+# Test
+coverage/
+
+# Docker
+postgres_data/
+uploads/
+minio_data/

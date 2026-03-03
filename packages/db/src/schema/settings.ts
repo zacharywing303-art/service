@@ -1,0 +1,42 @@
+import { pgTable, uuid, varchar, text, timestamp, jsonb } from 'drizzle-orm/pg-core';
+
+export const companySettings = pgTable('company_settings', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  companyName: varchar('company_name', { length: 255 }).notNull(),
+  logo: text('logo'),
+  tagline: varchar('tagline', { length: 500 }),
+  phone: varchar('phone', { length: 20 }),
+  email: varchar('email', { length: 255 }),
+  website: varchar('website', { length: 255 }),
+  address1: varchar('address1', { length: 255 }),
+  address2: varchar('address2', { length: 255 }),
+  city: varchar('city', { length: 100 }),
+  state: varchar('state', { length: 50 }),
+  zip: varchar('zip', { length: 20 }),
+  timezone: varchar('timezone', { length: 50 }).notNull().default('America/Los_Angeles'),
+  invoicePrefix: varchar('invoice_prefix', { length: 20 }).notNull().default('INV-'),
+  estimatePrefix: varchar('estimate_prefix', { length: 20 }).notNull().default('EST-'),
+  nextInvoiceNumber: varchar('next_invoice_number', { length: 20 }).notNull().default('1001'),
+  nextEstimateNumber: varchar('next_estimate_number', { length: 20 }).notNull().default('1001'),
+  defaultPaymentTermsDays: varchar('default_payment_terms_days', { length: 10 }).notNull().default('30'),
+  smtpConfig: jsonb('smtp_config'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const siteConfig = pgTable('site_config', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  heroTitle: varchar('hero_title', { length: 255 }),
+  heroSubtitle: text('hero_subtitle'),
+  aboutText: text('about_text'),
+  serviceAreaDescription: text('service_area_description'),
+  businessHours: jsonb('business_hours'),
+  socialLinks: jsonb('social_links'),
+  theme: varchar('theme', { length: 50 }).notNull().default('default'),
+  customCss: text('custom_css'),
+  metaTitle: varchar('meta_title', { length: 255 }),
+  metaDescription: text('meta_description'),
+  isPublished: timestamp('is_published', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});

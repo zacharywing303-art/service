@@ -1,0 +1,31 @@
+name: Deploy to DigitalOcean
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment
+        required: true
+        default: production
+        type: choice
+        options: [staging, production]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      - name: Login to DOCR
+        run: doctl registry login
+      - name: Build and push
+        run: |
+          REGISTRY=registry.digitalocean.com/${{ vars.DO_REGISTRY || 'openfsm' }}
+          for svc in api web site portal worker; do
+            docker build -t $REGISTRY/openfsm-$svc:${{ github.sha }} -f Dockerfile.$svc .
+            docker push $REGISTRY/openfsm-$svc:${{ github.sha }}
+          done
+      - name: Update App Platform
+        run: doctl apps update ${{ vars.DO_APP_ID }} --spec deploy/digitalocean/app-spec.yml

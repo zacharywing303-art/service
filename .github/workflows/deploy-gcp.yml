@@ -1,0 +1,38 @@
+name: Deploy to GCP
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment
+        required: true
+        default: production
+        type: choice
+        options: [staging, production]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION || 'us-central1' }}-docker.pkg.dev
+      - name: Build and deploy
+        env:
+          REGISTRY: ${{ vars.GCP_REGION || 'us-central1' }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/openfsm
+        run: |
+          for svc in api web site portal worker; do
+            docker build -t $REGISTRY/$svc:${{ github.sha }} -f Dockerfile.$svc .
+            docker push $REGISTRY/$svc:${{ github.sha }}
+          done
+          for svc in api web site portal; do
+            gcloud run deploy openfsm-$svc --image $REGISTRY/$svc:${{ github.sha }} --region ${{ vars.GCP_REGION || 'us-central1' }} --platform managed --allow-unauthenticated
+          done

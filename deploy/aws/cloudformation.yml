@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: OpenFSM Infrastructure
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+  DBPassword:
+    Type: String
+    NoEcho: true
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      Tags: [{Key: Name, Value: !Sub 'openfsm-${Environment}'}]
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub openfsm-${Environment}
+      Engine: postgres
+      EngineVersion: '16'
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      MasterUsername: openfsm
+      MasterUserPassword: !Ref DBPassword
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub openfsm-${Environment}
+
+Outputs:
+  ClusterName:
+    Value: !Ref ECSCluster

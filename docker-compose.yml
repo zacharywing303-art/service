@@ -1,0 +1,84 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: openfsm
+      POSTGRES_PASSWORD: openfsm
+      POSTGRES_DB: openfsm
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openfsm"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgresql://openfsm:openfsm@postgres:5432/openfsm
+      API_PORT: "4000"
+      API_HOST: "0.0.0.0"
+      SESSION_SECRET: dev-session-secret-change-in-production
+      CORS_ORIGIN: http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003
+      PORTAL_JWT_SECRET: dev-portal-jwt-secret-change-in-production
+      STORAGE_PROVIDER: local
+      STORAGE_LOCAL_PATH: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      DATABASE_URL: postgresql://openfsm:openfsm@postgres:5432/openfsm
+      STORAGE_PROVIDER: local
+      STORAGE_LOCAL_PATH: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+  site:
+    build:
+      context: .
+      dockerfile: Dockerfile.site
+    ports:
+      - "3002:80"
+    depends_on:
+      - api
+
+  portal:
+    build:
+      context: .
+      dockerfile: Dockerfile.portal
+    ports:
+      - "3003:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  uploads_data:

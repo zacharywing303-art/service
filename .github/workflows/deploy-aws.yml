@@ -1,0 +1,36 @@
+name: Deploy to AWS
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment
+        required: true
+        default: production
+        type: choice
+        options: [staging, production]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'us-west-2' }}
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and push
+        run: |
+          for svc in api web site portal worker; do
+            docker build -t ${{ steps.ecr.outputs.registry }}/openfsm-$svc:${{ github.sha }} -f Dockerfile.$svc .
+            docker push ${{ steps.ecr.outputs.registry }}/openfsm-$svc:${{ github.sha }}
+          done
+      - name: Update ECS
+        run: |
+          for svc in api worker; do
+            aws ecs update-service --cluster openfsm-${{ inputs.environment }} --service openfsm-$svc --force-new-deployment
+          done

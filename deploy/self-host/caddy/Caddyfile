@@ -1,0 +1,14 @@
+{$DOMAIN:localhost} {
+    reverse_proxy /api/* api:4000
+    reverse_proxy site:80
+}
+
+admin.{$DOMAIN:localhost} {
+    reverse_proxy /api/* api:4000
+    reverse_proxy web:80
+}
+
+portal.{$DOMAIN:localhost} {
+    reverse_proxy /api/* api:4000
+    reverse_proxy portal:80
+}
